@@ -3,6 +3,7 @@ import { useState } from 'react';
 
 import Markdown from '@/components/Markdown';
 import {
+  getErrorBadgeConfig,
   getThinkingBadgeConfig,
   getThinkingLabel,
   getToolBadgeConfig,
@@ -95,6 +96,38 @@ function ToolBadge({ tool, isExpanded, onToggle }: ToolBadgeProps) {
   );
 }
 
+interface ErrorBadgeProps {
+  error: string;
+  isExpanded: boolean;
+  onToggle: () => void;
+}
+
+function ErrorBadge({ error, isExpanded, onToggle }: ErrorBadgeProps) {
+  const config = getErrorBadgeConfig();
+  const hasContent = error?.trim().length > 0;
+
+  return (
+    <button
+      type="button"
+      onClick={() => hasContent && onToggle()}
+      disabled={!hasContent}
+      className={`inline-flex items-center gap-1 rounded-md border ${config.colors.border} ${config.colors.bg} px-1.5 py-0.5 text-[10px] font-medium tracking-wide ${config.colors.text} transition-colors ${config.colors.hoverBg} ${
+        !hasContent ? 'cursor-default opacity-60' : 'cursor-pointer'
+      }`}
+    >
+      {config.icon && <span className="shrink-0">{config.icon}</span>}
+      <span>Error</span>
+      {hasContent && (
+        <span className={config.colors.chevron}>
+          {isExpanded ?
+            <ChevronUp className="size-2.5" />
+          : <ChevronDown className="size-2.5" />}
+        </span>
+      )}
+    </button>
+  );
+}
+
 export default function BlockGroup({
   blocks,
   isLatestActiveSection = false,
@@ -111,6 +144,9 @@ export default function BlockGroup({
     }
     if (block.type === 'tool_use') {
       return block.tool?.result || block.tool?.inputJson || block.tool?.parsedInput || false;
+    }
+    if (block.type === 'error') {
+      return block.error ? block.error.trim().length > 0 : false;
     }
     return false;
   });
@@ -158,6 +194,16 @@ export default function BlockGroup({
               />
             );
           }
+          if (block.type === 'error') {
+            return (
+              <ErrorBadge
+                key={`error-${index}`}
+                error={block.error || ''}
+                isExpanded={isExpanded}
+                onToggle={toggleGroup}
+              />
+            );
+          }
           return null;
         })}
       </div>
@@ -193,6 +239,25 @@ export default function BlockGroup({
                 return (
                   <div key={`tool-expanded-${index}`} className="my-2">
                     <ToolUse tool={block.tool} />
+                  </div>
+                );
+              }
+              if (block.type === 'error' && block.error) {
+                const config = getErrorBadgeConfig();
+                const borderColor = config.colors.border
+                  .replace('/60', '/50')
+                  .replace('/30', '/50');
+                return (
+                  <div key={`error-expanded-${index}`} className="my-2">
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-red-600 dark:text-red-400">
+                      {config.icon}
+                      <span>Error</span>
+                    </div>
+                    <div
+                      className={`error-expanded-content mt-1.5 ml-3 border-l ${borderColor} pl-3 text-sm leading-relaxed text-red-600 dark:text-red-400`}
+                    >
+                      <pre className="whitespace-pre-wrap font-mono text-xs">{block.error}</pre>
+                    </div>
                   </div>
                 );
               }

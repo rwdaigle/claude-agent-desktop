@@ -601,54 +601,65 @@ export function useClaudeChat(): {
     const unsubscribeMessageError = window.electron.chat.onMessageError((error: string) => {
       isStreamingRef.current = false;
 
-      // Append all accumulated debug messages when error occurs
-      if (debugMessagesRef.current.length > 0) {
-        const accumulatedDebug = debugMessagesRef.current.join('\n');
-        debugMessagesRef.current = []; // Clear accumulator
+      // Get accumulated debug messages
+      const accumulatedDebug =
+        debugMessagesRef.current.length > 0 ? debugMessagesRef.current.join('\n') : null;
+      debugMessagesRef.current = []; // Clear accumulator
 
-        setMessages((prev) => {
-          const lastMessage = prev[prev.length - 1];
-          const debugContent = `\n\n---\n**🔍 Debug Output:**\n\`\`\`\n${accumulatedDebug}\n\`\`\`\n`;
+      setMessages((prev) => {
+        const lastMessage = prev[prev.length - 1];
+        const errorBlock = {
+          type: 'error' as const,
+          error: error
+        };
 
-          if (lastMessage && lastMessage.role === 'assistant') {
-            const content = lastMessage.content;
-            if (typeof content === 'string') {
-              return [
-                ...prev.slice(0, -1),
-                {
-                  ...lastMessage,
-                  content: content + debugContent
-                }
-              ];
-            } else {
-              return [
-                ...prev.slice(0, -1),
-                {
-                  ...lastMessage,
-                  content: [
-                    ...content,
-                    {
-                      type: 'text' as const,
-                      text: debugContent
-                    }
-                  ]
-                }
-              ];
-            }
+        // If there's an existing assistant message, add error block to it
+        if (lastMessage && lastMessage.role === 'assistant') {
+          const content = lastMessage.content;
+          let contentArray =
+            typeof content === 'string' ? [{ type: 'text' as const, text: content }] : [...content];
+
+          // Add debug content if any
+          if (accumulatedDebug) {
+            const debugContent = `\n\n---\n**Debug Output:**\n\`\`\`\n${accumulatedDebug}\n\`\`\`\n`;
+            contentArray = [...contentArray, { type: 'text' as const, text: debugContent }];
           }
-          return prev;
-        });
-      }
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          role: 'assistant',
-          content: `Error: ${error}`,
-          timestamp: new Date()
+          // Add error block
+          contentArray = [...contentArray, errorBlock];
+
+          return [
+            ...prev.slice(0, -1),
+            {
+              ...lastMessage,
+              content: contentArray
+            }
+          ];
         }
-      ]);
+
+        // No existing assistant message - create new one with error block
+        let contentArray: Array<{ type: 'text'; text: string } | { type: 'error'; error: string }> =
+          [];
+
+        // Add debug content if any
+        if (accumulatedDebug) {
+          const debugContent = `\n\n---\n**Debug Output:**\n\`\`\`\n${accumulatedDebug}\n\`\`\`\n`;
+          contentArray = [{ type: 'text' as const, text: debugContent }];
+        }
+
+        // Add error block
+        contentArray = [...contentArray, errorBlock];
+
+        return [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: contentArray,
+            timestamp: new Date()
+          }
+        ];
+      });
       setIsLoading(false);
     });
 

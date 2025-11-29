@@ -68,7 +68,7 @@ export default function Message({ message, isLoading = false }: MessageProps) {
         currentGroup = [];
       }
       groupedBlocks.push(block);
-    } else if (block.type === 'thinking' || block.type === 'tool_use') {
+    } else if (block.type === 'thinking' || block.type === 'tool_use' || block.type === 'error') {
       // Add to current group
       currentGroup.push(block);
     }
