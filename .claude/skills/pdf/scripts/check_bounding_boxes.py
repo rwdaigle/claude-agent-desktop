@@ -1,3 +1,8 @@
+# /// script
+# requires-python = ">=3.12"
+# dependencies = []
+# ///
+
 from dataclasses import dataclass
 import json
 import sys

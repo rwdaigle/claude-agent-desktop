@@ -4,6 +4,7 @@ import { dirname, join, resolve } from 'path';
 import { app } from 'electron';
 
 import type { ChatModelPreference } from '../../shared/types/ipc';
+import { buildPythonEnv } from './pythonEnv';
 
 export interface AppConfig {
   workspaceDir?: string;
@@ -413,6 +414,8 @@ export function buildEnhancedPath(): string {
  * - All process.env variables
  * - ANTHROPIC_API_KEY (from env or local config)
  * - PATH (enhanced with bundled binaries)
+ * - UV_PYTHON_INSTALL_DIR (controlled Python installation directory)
+ * - UV_CACHE_DIR (controlled package cache directory)
  * - CLAUDE_CODE_GIT_BASH_PATH (Windows only, if bash.exe found)
  * - MSYSTEM, MSYS2_PATH_TYPE, and HOME (Windows only, if MSYS2 bash detected - required for PATH inheritance and cwd)
  * - DEBUG (if debug mode enabled)
@@ -421,10 +424,12 @@ export function buildClaudeSessionEnv(): Record<string, string> {
   const enhancedPath = buildEnhancedPath();
   const apiKey = getApiKey();
   const workspaceDir = getWorkspaceDir();
+  const pythonEnv = buildPythonEnv();
 
   const env: Record<string, string> = {
     ...process.env,
-    PATH: enhancedPath
+    PATH: enhancedPath,
+    ...pythonEnv // UV_PYTHON_INSTALL_DIR, UV_CACHE_DIR for controlled Python/package installation
   };
 
   // Add API key if available
@@ -479,7 +484,6 @@ export async function ensureWorkspaceDir(): Promise<void> {
       : join(process.resourcesPath, 'app.asar.unpacked', 'out', '.claude');
 
     if (existsSync(sourceClaudeDir)) {
-      console.log('Syncing .claude directory to workspace...');
       const destClaudeDir = join(workspaceDir, '.claude');
 
       // Remove existing .claude directory if it exists
@@ -489,14 +493,11 @@ export async function ensureWorkspaceDir(): Promise<void> {
 
       // Copy entire .claude directory (including skills)
       await cp(sourceClaudeDir, destClaudeDir, { recursive: true });
-      console.log('.claude directory synced successfully');
-    } else {
-      console.warn(`Could not find .claude directory at ${sourceClaudeDir}`);
     }
 
     // Generate settings.json with allowed directories
     generateSettingsJson();
-  } catch (error) {
-    console.error('Failed to sync .claude directory:', error);
+  } catch {
+    // Silently ignore errors during .claude sync - app can still function
   }
 }

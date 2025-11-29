@@ -1,3 +1,8 @@
+# /// script
+# requires-python = ">=3.12"
+# dependencies = ["pypdf>=4.0"]
+# ///
+
 import json
 import sys
 

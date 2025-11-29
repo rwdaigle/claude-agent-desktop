@@ -76,7 +76,7 @@ A user may ask you to create, edit, or analyze the contents of an .xlsx file. Yo
 
 ## Important Requirements
 
-**LibreOffice Required for Formula Recalculation**: You can assume LibreOffice is installed for recalculating formula values using the `recalc.py` script. The script automatically configures LibreOffice on first run
+**Pure Python Formula Recalculation**: The `recalc.py` script uses xlcalculator (pure Python) for formula recalculation. No external dependencies like LibreOffice are required. Note: xlcalculator supports most common Excel functions but may not support all advanced functions. Unsupported formulas will show errors.
 
 ## Reading and analyzing data
 
@@ -229,11 +229,12 @@ python recalc.py output.xlsx 30
 
 The script:
 
-- Automatically sets up LibreOffice macro on first run
+- Uses xlcalculator (pure Python) - no external dependencies required
 - Recalculates all formulas in all sheets
 - Scans ALL cells for Excel errors (#REF!, #DIV/0!, etc.)
 - Returns JSON with detailed error locations and counts
-- Works on both Linux and macOS
+- Works on all platforms (macOS, Windows, Linux)
+- Note: Some advanced Excel functions may not be supported by xlcalculator
 
 ## Formula Verification Checklist
 

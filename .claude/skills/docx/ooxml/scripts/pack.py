@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.12"
+# dependencies = ["defusedxml>=0.7"]
+# ///
+
 """
 Tool to pack a directory into a .docx, .pptx, or .xlsx file with XML formatting undone.
 

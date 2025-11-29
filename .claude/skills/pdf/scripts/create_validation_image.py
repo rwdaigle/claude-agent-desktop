@@ -1,3 +1,8 @@
+# /// script
+# requires-python = ">=3.12"
+# dependencies = ["pillow>=10.0"]
+# ///
+
 import json
 import sys
 
