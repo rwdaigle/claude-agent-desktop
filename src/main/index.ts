@@ -1,3 +1,4 @@
+import { spawn } from 'child_process';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { app, BrowserWindow, Menu } from 'electron';
@@ -7,7 +8,8 @@ import { registerConfigHandlers } from './handlers/config-handlers';
 import { registerConversationHandlers } from './handlers/conversation-handlers';
 import { registerShellHandlers } from './handlers/shell-handlers';
 import { registerUpdateHandlers } from './handlers/update-handlers';
-import { buildEnhancedPath, ensureWorkspaceDir } from './lib/config';
+import { buildEnhancedPath, ensureWorkspaceDir, getBundledUvPath } from './lib/config';
+import { buildPythonEnv } from './lib/pythonEnv';
 import { initializeUpdater, startPeriodicUpdateCheck } from './lib/updater';
 import { loadWindowBounds, saveWindowBounds } from './lib/window-state';
 import { createApplicationMenu } from './menu';
@@ -21,6 +23,30 @@ app.commandLine.appendSwitch('disable-features', 'WebAssemblyTrapHandler');
 process.env.PATH = buildEnhancedPath();
 
 let mainWindow: BrowserWindow | null = null;
+
+/**
+ * Pre-warms the Python environment by downloading Python 3.12 via UV in the background.
+ * This runs silently and doesn't block app startup. If Python is already installed,
+ * this completes almost instantly.
+ */
+function prewarmPythonEnvironment(): void {
+  const uvPath = getBundledUvPath();
+  const pythonEnv = buildPythonEnv();
+
+  // Spawn UV to install Python 3.12 in the background
+  const proc = spawn(uvPath, ['python', 'install', '3.12'], {
+    env: { ...process.env, ...pythonEnv },
+    stdio: 'ignore', // Run silently
+    detached: false
+  });
+
+  proc.on('error', (error) => {
+    console.error('Failed to prewarm Python environment:', error);
+  });
+
+  // Don't wait for the process - it runs in background
+  proc.unref();
+}
 
 function createWindow() {
   // electron-vite uses different extensions in dev (.cjs) vs production (.cjs)
@@ -117,6 +143,10 @@ app.whenReady().then(async () => {
   ensureWorkspaceDir().catch((error) => {
     console.error('Failed to ensure workspace directory:', error);
   });
+
+  // Pre-warm Python environment in background (downloads Python if needed)
+  // This ensures Python is ready when a user first uses a Python skill
+  prewarmPythonEnvironment();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

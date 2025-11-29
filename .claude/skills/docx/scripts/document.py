@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.12"
+# dependencies = ["defusedxml>=0.7"]
+# ///
+
 """
 Library for working with Word documents: comments, tracked changes, and editing.
 

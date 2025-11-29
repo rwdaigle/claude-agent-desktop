@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.12"
+# dependencies = ["defusedxml>=0.7"]
+# ///
+
 """
 Utilities for editing OOXML documents.
 
