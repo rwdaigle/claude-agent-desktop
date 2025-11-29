@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "setup": "cp $CONDUCTOR_ROOT_PATH/.env .env; bun install",
+    "run": "bun run test"
+  }
+}
