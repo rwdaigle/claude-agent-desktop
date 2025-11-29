@@ -1,4 +1,5 @@
 import {
+  AlertTriangle,
   BookOpen,
   Brain,
   FileEdit,
@@ -433,4 +434,19 @@ export function getThinkingExpandedLabel(isComplete: boolean, durationMs?: numbe
     return 'Thought';
   }
   return 'Thinking';
+}
+
+// Error badge configuration - single source of truth
+export function getErrorBadgeConfig(): ToolBadgeConfig {
+  return {
+    icon: <AlertTriangle className="size-2.5" />,
+    colors: {
+      border: 'border-red-200/60 dark:border-red-500/30',
+      bg: 'bg-red-50/80 dark:bg-red-500/10',
+      text: 'text-red-600 dark:text-red-400',
+      hoverBg: 'hover:bg-red-100/80 dark:hover:bg-red-500/20',
+      chevron: 'text-red-400 dark:text-red-500',
+      iconColor: 'text-red-500 dark:text-red-400'
+    }
+  };
 }
