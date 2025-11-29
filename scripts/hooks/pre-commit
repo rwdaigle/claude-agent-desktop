@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pre-commit hook: runs typecheck and lint before each commit
+# Pre-commit hook: runs lint, format, and typecheck before each commit
 
 set -e
 
@@ -20,7 +20,18 @@ else
     exit 1
 fi
 
-# Stage any files that were auto-fixed by lint
+# Run prettier with auto-fix
+echo ""
+echo "Running format with auto-fix..."
+if bun run format; then
+    echo "Format passed."
+else
+    echo ""
+    echo "Format failed. Please fix the errors above and try again."
+    exit 1
+fi
+
+# Stage any files that were auto-fixed by lint or prettier
 git diff --name-only | while read -r file; do
     if [[ -f "$file" ]]; then
         git add "$file"
