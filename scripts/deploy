@@ -1,0 +1,128 @@
+#!/bin/bash
+
+# Deploy script - bumps version, creates git tag, and pushes to trigger CI/CD release
+#
+# Usage:
+#   ./scripts/deploy.sh patch      # 0.2.0 -> 0.2.1
+#   ./scripts/deploy.sh minor      # 0.2.0 -> 0.3.0
+#   ./scripts/deploy.sh major      # 0.2.0 -> 1.0.0
+#   ./scripts/deploy.sh --dry      # Preview current version (no bump)
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+
+cd "$ROOT_DIR"
+
+# Parse arguments
+BUMP_TYPE=""
+DRY_RUN=false
+
+for arg in "$@"; do
+  case $arg in
+    major|minor|patch)
+      BUMP_TYPE="$arg"
+      ;;
+    --dry)
+      DRY_RUN=true
+      ;;
+    *)
+      echo "❌ Unknown argument: $arg"
+      echo "Usage: ./scripts/deploy.sh [major|minor|patch] [--dry]"
+      exit 1
+      ;;
+  esac
+done
+
+if [[ -z "$BUMP_TYPE" && "$DRY_RUN" == false ]]; then
+  echo "❌ Error: Please specify version bump type"
+  echo "Usage: ./scripts/deploy.sh [major|minor|patch] [--dry]"
+  exit 1
+fi
+
+if [[ "$DRY_RUN" == true ]]; then
+  echo -e "\n🔍 DRY RUN - No changes will be made\n"
+fi
+
+# Get current version from package.json
+CURRENT_VERSION=$(grep '"version"' package.json | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/')
+
+# Parse version components
+IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+
+# Calculate new version
+if [[ -n "$BUMP_TYPE" ]]; then
+  case $BUMP_TYPE in
+    major)
+      NEW_MAJOR=$((MAJOR + 1))
+      NEW_VERSION="$NEW_MAJOR.0.0"
+      ;;
+    minor)
+      NEW_MINOR=$((MINOR + 1))
+      NEW_VERSION="$MAJOR.$NEW_MINOR.0"
+      ;;
+    patch)
+      NEW_PATCH=$((PATCH + 1))
+      NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
+      ;;
+  esac
+else
+  NEW_VERSION="$CURRENT_VERSION"
+fi
+
+TAG="v$NEW_VERSION"
+BRANCH=$(git branch --show-current)
+
+echo "📦 Current version: $CURRENT_VERSION"
+if [[ -n "$BUMP_TYPE" ]]; then
+  echo "📦 New version: $NEW_VERSION ($BUMP_TYPE bump)"
+fi
+echo "🏷️  Tag: $TAG"
+echo -e "🌿 Branch: $BRANCH\n"
+
+# Check for uncommitted changes
+if [[ -n $(git status --porcelain) ]]; then
+  echo "❌ Error: You have uncommitted changes. Please commit or stash them first."
+  exit 1
+fi
+
+# Check if tag already exists
+if git rev-parse "$TAG" >/dev/null 2>&1; then
+  echo "❌ Error: Tag $TAG already exists."
+  echo "   Choose a different bump type or manually update package.json."
+  exit 1
+fi
+
+# Warn if not on main branch
+if [[ "$BRANCH" != "main" ]]; then
+  echo "⚠️  Warning: You are not on the main branch (currently on $BRANCH)"
+  echo -e "   Releases are typically made from main.\n"
+fi
+
+if [[ "$DRY_RUN" == true ]]; then
+  echo "Would run:"
+  echo "> Update package.json version to $NEW_VERSION"
+  echo "> git add package.json"
+  echo "> git commit -m \"chore: bump version to $NEW_VERSION\""
+  echo "> git tag -a $TAG -m \"Release $TAG\""
+  echo "> git push origin $BRANCH --tags"
+  exit 0
+fi
+
+# Update version in package.json
+echo "🚀 Creating release...\n"
+
+sed -i '' "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/" package.json
+
+# Commit the version bump
+git add package.json
+git commit -m "chore: bump version to $NEW_VERSION"
+
+# Create and push the tag
+git tag -a "$TAG" -m "Release $TAG"
+git push origin "$BRANCH" --tags
+
+echo -e "\n✅ Release $TAG triggered!"
+echo "   GitHub Actions will build and publish Mac + Windows installers."
+echo "   Monitor progress: https://github.com/rwdaigle/claude-agent-desktop/actions"

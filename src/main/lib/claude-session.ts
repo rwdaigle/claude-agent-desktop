@@ -201,7 +201,7 @@ export async function startStreamingSession(mainWindow: BrowserWindow | null): P
         maxThinkingTokens: 32_000,
         settingSources: ['project'],
         permissionMode: 'acceptEdits',
-        allowedTools: ['Bash', 'WebFetch', 'WebSearch', 'Skill'],
+        allowedTools: ['Bash', 'Read', 'WebFetch', 'WebSearch', 'Skill'],
         pathToClaudeCodeExecutable: resolveClaudeCodeCli(),
         executable: 'bun',
         env,

@@ -59,7 +59,7 @@ export interface ToolUseSimple extends ToolUse {
 }
 
 export interface ContentBlock {
-  type: 'text' | 'tool_use' | 'thinking';
+  type: 'text' | 'tool_use' | 'thinking' | 'error';
   text?: string;
   tool?: ToolUseSimple;
   thinking?: string;
@@ -69,6 +69,8 @@ export interface ContentBlock {
   thinkingStreamIndex?: number;
   // Whether this thinking block is complete (received content_block_stop)
   isComplete?: boolean;
+  // Error message content
+  error?: string;
 }
 
 export interface MessageAttachment {
