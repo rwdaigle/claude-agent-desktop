@@ -40,8 +40,8 @@ function prewarmPythonEnvironment(): void {
     detached: false
   });
 
-  proc.on('error', (error) => {
-    console.error('Failed to prewarm Python environment:', error);
+  proc.on('error', () => {
+    // Silently ignore - Python will be downloaded on first skill use
   });
 
   // Don't wait for the process - it runs in background
@@ -140,8 +140,8 @@ app.whenReady().then(async () => {
   Menu.setApplicationMenu(menu);
 
   // Ensure workspace directory exists and sync skills (run in background after window creation)
-  ensureWorkspaceDir().catch((error) => {
-    console.error('Failed to ensure workspace directory:', error);
+  ensureWorkspaceDir().catch(() => {
+    // Silently ignore - app can still function
   });
 
   // Pre-warm Python environment in background (downloads Python if needed)

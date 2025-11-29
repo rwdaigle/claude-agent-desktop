@@ -484,7 +484,6 @@ export async function ensureWorkspaceDir(): Promise<void> {
       : join(process.resourcesPath, 'app.asar.unpacked', 'out', '.claude');
 
     if (existsSync(sourceClaudeDir)) {
-      console.log('Syncing .claude directory to workspace...');
       const destClaudeDir = join(workspaceDir, '.claude');
 
       // Remove existing .claude directory if it exists
@@ -494,14 +493,11 @@ export async function ensureWorkspaceDir(): Promise<void> {
 
       // Copy entire .claude directory (including skills)
       await cp(sourceClaudeDir, destClaudeDir, { recursive: true });
-      console.log('.claude directory synced successfully');
-    } else {
-      console.warn(`Could not find .claude directory at ${sourceClaudeDir}`);
     }
 
     // Generate settings.json with allowed directories
     generateSettingsJson();
-  } catch (error) {
-    console.error('Failed to sync .claude directory:', error);
+  } catch {
+    // Silently ignore errors during .claude sync - app can still function
   }
 }
