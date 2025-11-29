@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { cp, mkdir, rm } from 'fs/promises';
 import { dirname, join, resolve } from 'path';
 import { app } from 'electron';
@@ -10,6 +10,7 @@ export interface AppConfig {
   debugMode?: boolean;
   chatModelPreference?: ChatModelPreference | 'smart';
   apiKey?: string;
+  allowedDirectories?: string[];
 }
 
 const DEFAULT_MODEL_PREFERENCE: ChatModelPreference = 'fast';
@@ -110,13 +111,88 @@ export function getWorkspaceDir(): string {
   if (config.workspaceDir) {
     return config.workspaceDir;
   }
-  // Default to Desktop/claude-agent
-  return join(app.getPath('desktop'), 'claude-agent');
+  // Default to ~/.claude-agent
+  return join(app.getPath('home'), '.claude-agent');
 }
 
 export function getDebugMode(): boolean {
   const config = loadConfig();
   return config.debugMode ?? false; // Default to false
+}
+
+/**
+ * Gets the list of allowed directories that Claude can access.
+ * Defaults to the user's home directory ('~') if not configured.
+ */
+export function getAllowedDirectories(): string[] {
+  const config = loadConfig();
+  return config.allowedDirectories ?? ['~'];
+}
+
+/**
+ * Sets the list of allowed directories that Claude can access.
+ * Filters empty strings and normalizes paths.
+ */
+export function setAllowedDirectories(directories: string[]): void {
+  const config = loadConfig();
+  config.allowedDirectories = directories.filter((d) => d.trim()).map((d) => d.trim());
+  saveConfig(config);
+  generateSettingsJson();
+}
+
+/**
+ * Adds a single directory to the allowed directories list.
+ * Prevents duplicates.
+ */
+export function addAllowedDirectory(directory: string): void {
+  const config = loadConfig();
+  const dirs = config.allowedDirectories ?? ['~'];
+  const normalized = directory.trim();
+  if (normalized && !dirs.includes(normalized)) {
+    dirs.push(normalized);
+    config.allowedDirectories = dirs;
+    saveConfig(config);
+    generateSettingsJson();
+  }
+}
+
+/**
+ * Removes a single directory from the allowed directories list.
+ */
+export function removeAllowedDirectory(directory: string): void {
+  const config = loadConfig();
+  const normalized = directory.trim();
+  config.allowedDirectories = (config.allowedDirectories ?? ['~']).filter((d) => d !== normalized);
+  saveConfig(config);
+  generateSettingsJson();
+}
+
+/**
+ * Generates the .claude/settings.json file in the workspace directory
+ * with the configured allowed directories.
+ */
+export function generateSettingsJson(): void {
+  const workspaceDir = getWorkspaceDir();
+  const allowedDirs = getAllowedDirectories();
+
+  const settings = {
+    permissions: {
+      additionalDirectories: allowedDirs
+    }
+  };
+
+  const claudeDir = join(workspaceDir, '.claude');
+  const settingsPath = join(claudeDir, 'settings.json');
+
+  try {
+    // Ensure .claude directory exists
+    if (!existsSync(claudeDir)) {
+      mkdirSync(claudeDir, { recursive: true });
+    }
+    writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+  } catch (error) {
+    console.error('Failed to generate settings.json:', error);
+  }
 }
 
 export function getChatModelPreferenceSetting(): ChatModelPreference {
@@ -417,6 +493,9 @@ export async function ensureWorkspaceDir(): Promise<void> {
     } else {
       console.warn(`Could not find .claude directory at ${sourceClaudeDir}`);
     }
+
+    // Generate settings.json with allowed directories
+    generateSettingsJson();
   } catch (error) {
     console.error('Failed to sync .claude directory:', error);
   }

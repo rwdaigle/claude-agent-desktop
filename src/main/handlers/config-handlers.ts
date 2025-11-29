@@ -1,17 +1,21 @@
 import { existsSync, readFileSync } from 'fs';
 import { createRequire } from 'module';
 import { release, type, version } from 'os';
-import { app, ipcMain } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 
 import {
+  addAllowedDirectory,
   buildClaudeSessionEnv,
   buildEnhancedPath,
   ensureWorkspaceDir,
+  getAllowedDirectories,
   getApiKeyStatus,
   getDebugMode,
   getWorkspaceDir,
   loadConfig,
+  removeAllowedDirectory,
   saveConfig,
+  setAllowedDirectories,
   setApiKey
 } from '../lib/config';
 
@@ -168,5 +172,39 @@ export function registerConfigHandlers(): void {
       osType: type(),
       osVersion: version()
     };
+  });
+
+  // Get allowed directories
+  ipcMain.handle('config:get-allowed-directories', () => {
+    return { directories: getAllowedDirectories() };
+  });
+
+  // Set all allowed directories (replace)
+  ipcMain.handle('config:set-allowed-directories', (_event, directories: string[]) => {
+    setAllowedDirectories(directories);
+    return { success: true, directories: getAllowedDirectories() };
+  });
+
+  // Add a directory via file picker dialog
+  ipcMain.handle('config:add-allowed-directory-dialog', async (event) => {
+    const browserWindow = BrowserWindow.fromWebContents(event.sender);
+    const result = await dialog.showOpenDialog(browserWindow!, {
+      properties: ['openDirectory'],
+      title: 'Select Directory to Allow',
+      buttonLabel: 'Allow Access'
+    });
+
+    if (result.canceled || result.filePaths.length === 0) {
+      return { success: false, canceled: true };
+    }
+
+    addAllowedDirectory(result.filePaths[0]);
+    return { success: true, directories: getAllowedDirectories() };
+  });
+
+  // Remove a directory
+  ipcMain.handle('config:remove-allowed-directory', (_event, directory: string) => {
+    removeAllowedDirectory(directory);
+    return { success: true, directories: getAllowedDirectories() };
   });
 }
