@@ -13,9 +13,7 @@ import { join } from 'path';
 describe('Python Environment Config Logic', () => {
   describe('buildPythonEnv structure', () => {
     // Tests the structure returned by buildPythonEnv
-    const buildPythonEnvFromBase = (
-      baseDir: string
-    ): Record<string, string> => {
+    const buildPythonEnvFromBase = (baseDir: string): Record<string, string> => {
       return {
         UV_PYTHON_INSTALL_DIR: join(baseDir, 'python'),
         UV_CACHE_DIR: join(baseDir, 'uv-cache')
@@ -86,9 +84,7 @@ describe('PEP 723 Inline Metadata', () => {
   const extractPep723Metadata = (
     content: string
   ): { requiresPython?: string; dependencies?: string[] } | null => {
-    const scriptBlockMatch = content.match(
-      /^# \/\/\/ script\n((?:# .+\n)*?)# \/\/\/$/m
-    );
+    const scriptBlockMatch = content.match(/^# \/\/\/ script\n((?:# .+\n)*?)# \/\/\/$/m);
     if (!scriptBlockMatch) return null;
 
     const block = scriptBlockMatch[1];
@@ -157,10 +153,7 @@ import sys`;
   });
 
   describe('PDF skill scripts', () => {
-    const pdfScriptsDir = join(
-      __dirname,
-      '../../../.claude/skills/pdf/scripts'
-    );
+    const pdfScriptsDir = join(__dirname, '../../../.claude/skills/pdf/scripts');
 
     const getPythonFiles = (dir: string): string[] => {
       try {
@@ -190,12 +183,8 @@ import sys`;
       const metadata = extractPep723Metadata(content);
 
       expect(metadata?.dependencies).toBeDefined();
-      expect(metadata?.dependencies?.some((d) => d.includes('pypdfium2'))).toBe(
-        true
-      );
-      expect(metadata?.dependencies?.some((d) => d.includes('pdf2image'))).toBe(
-        false
-      );
+      expect(metadata?.dependencies?.some((d) => d.includes('pypdfium2'))).toBe(true);
+      expect(metadata?.dependencies?.some((d) => d.includes('pdf2image'))).toBe(false);
 
       // Also check imports in the file
       expect(content).toContain('import pypdfium2');
@@ -204,10 +193,7 @@ import sys`;
   });
 
   describe('DOCX skill scripts', () => {
-    const docxScriptsDir = join(
-      __dirname,
-      '../../../.claude/skills/docx/scripts'
-    );
+    const docxScriptsDir = join(__dirname, '../../../.claude/skills/docx/scripts');
 
     test('document.py has defusedxml dependency', () => {
       const file = join(docxScriptsDir, 'document.py');
@@ -215,9 +201,7 @@ import sys`;
       const metadata = extractPep723Metadata(content);
 
       expect(metadata).not.toBeNull();
-      expect(metadata?.dependencies?.some((d) => d.includes('defusedxml'))).toBe(
-        true
-      );
+      expect(metadata?.dependencies?.some((d) => d.includes('defusedxml'))).toBe(true);
     });
 
     test('utilities.py has defusedxml dependency', () => {
@@ -226,9 +210,7 @@ import sys`;
       const metadata = extractPep723Metadata(content);
 
       expect(metadata).not.toBeNull();
-      expect(metadata?.dependencies?.some((d) => d.includes('defusedxml'))).toBe(
-        true
-      );
+      expect(metadata?.dependencies?.some((d) => d.includes('defusedxml'))).toBe(true);
     });
   });
 
@@ -241,12 +223,8 @@ import sys`;
       const metadata = extractPep723Metadata(content);
 
       expect(metadata).not.toBeNull();
-      expect(metadata?.dependencies?.some((d) => d.includes('xlcalculator'))).toBe(
-        true
-      );
-      expect(metadata?.dependencies?.some((d) => d.includes('openpyxl'))).toBe(
-        true
-      );
+      expect(metadata?.dependencies?.some((d) => d.includes('xlcalculator'))).toBe(true);
+      expect(metadata?.dependencies?.some((d) => d.includes('openpyxl'))).toBe(true);
 
       // Check imports - should use xlcalculator, not subprocess for soffice
       expect(content).toContain('from xlcalculator import');

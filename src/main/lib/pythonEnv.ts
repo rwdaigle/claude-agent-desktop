@@ -1,5 +1,5 @@
-import { app } from 'electron';
 import { join } from 'path';
+import { app } from 'electron';
 
 /**
  * Returns the paths used by UV for Python and package management.
