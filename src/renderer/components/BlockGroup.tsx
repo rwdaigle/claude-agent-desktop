@@ -256,7 +256,7 @@ export default function BlockGroup({
                     <div
                       className={`error-expanded-content mt-1.5 ml-3 border-l ${borderColor} pl-3 text-sm leading-relaxed text-red-600 dark:text-red-400`}
                     >
-                      <pre className="whitespace-pre-wrap font-mono text-xs">{block.error}</pre>
+                      <pre className="font-mono text-xs whitespace-pre-wrap">{block.error}</pre>
                     </div>
                   </div>
                 );
