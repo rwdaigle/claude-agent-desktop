@@ -17,6 +17,26 @@ export interface SetWorkspaceResponse {
   error?: string;
 }
 
+export interface AllowedDirectoriesResponse {
+  directories: string[];
+}
+
+export interface SetAllowedDirectoriesResponse {
+  success: boolean;
+  directories: string[];
+}
+
+export interface AddAllowedDirectoryDialogResponse {
+  success: boolean;
+  canceled?: boolean;
+  directories?: string[];
+}
+
+export interface RemoveAllowedDirectoryResponse {
+  success: boolean;
+  directories: string[];
+}
+
 export interface PathInfoResponse {
   platform: string;
   pathSeparator: string;
@@ -191,6 +211,10 @@ export interface ElectronAPI {
       success: boolean;
       status: { configured: boolean; source: 'env' | 'local' | null; lastFour: string | null };
     }>;
+    getAllowedDirectories: () => Promise<AllowedDirectoriesResponse>;
+    setAllowedDirectories: (directories: string[]) => Promise<SetAllowedDirectoriesResponse>;
+    addAllowedDirectoryDialog: () => Promise<AddAllowedDirectoryDialogResponse>;
+    removeAllowedDirectory: (directory: string) => Promise<RemoveAllowedDirectoryResponse>;
   };
   shell: {
     openExternal: (url: string) => Promise<{ success: boolean; error?: string }>;

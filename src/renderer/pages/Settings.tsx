@@ -58,6 +58,10 @@ function Settings({ onBack }: SettingsProps) {
   const [isSavingApiKey, setIsSavingApiKey] = useState(false);
   const [apiKeySaveState, setApiKeySaveState] = useState<'idle' | 'success' | 'error'>('idle');
 
+  const [allowedDirectories, setAllowedDirectories] = useState<string[]>([]);
+  const [isLoadingDirectories, setIsLoadingDirectories] = useState(true);
+  const [isAddingDirectory, setIsAddingDirectory] = useState(false);
+
   useEffect(() => {
     // Load current workspace directory
     window.electron.config
@@ -89,6 +93,17 @@ function Settings({ onBack }: SettingsProps) {
       })
       .catch(() => {
         // ignore - will show as not configured
+      });
+
+    // Load allowed directories
+    window.electron.config
+      .getAllowedDirectories()
+      .then((response) => {
+        setAllowedDirectories(response.directories);
+        setIsLoadingDirectories(false);
+      })
+      .catch(() => {
+        setIsLoadingDirectories(false);
       });
   }, []);
 
@@ -233,7 +248,32 @@ function Settings({ onBack }: SettingsProps) {
     }
   };
 
-  const isFormLoading = isLoadingWorkspace || isLoadingDebugMode;
+  const handleAddDirectory = async () => {
+    setIsAddingDirectory(true);
+    try {
+      const response = await window.electron.config.addAllowedDirectoryDialog();
+      if (response.success && response.directories) {
+        setAllowedDirectories(response.directories);
+      }
+    } catch (error) {
+      console.error('Failed to add directory:', error);
+    } finally {
+      setIsAddingDirectory(false);
+    }
+  };
+
+  const handleRemoveDirectory = async (directory: string) => {
+    try {
+      const response = await window.electron.config.removeAllowedDirectory(directory);
+      if (response.success) {
+        setAllowedDirectories(response.directories);
+      }
+    } catch (error) {
+      console.error('Failed to remove directory:', error);
+    }
+  };
+
+  const isFormLoading = isLoadingWorkspace || isLoadingDebugMode || isLoadingDirectories;
   const apiKeyPlaceholder = apiKeyStatus.lastFour ? `...${apiKeyStatus.lastFour}` : 'sk-ant-...';
 
   return (
@@ -354,7 +394,7 @@ function Settings({ onBack }: SettingsProps) {
                         Workspace Directory
                       </h2>
                       <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                        Directory where files are read and written. Default: Desktop/claude-agent.
+                        Directory where files are read and written. Default: ~/.claude-agent.
                       </p>
                     </div>
                     {currentWorkspaceDir && (
@@ -389,6 +429,55 @@ function Settings({ onBack }: SettingsProps) {
                         Failed to update workspace directory
                       </p>
                     )}
+                  </section>
+
+                  <div className="border-t border-neutral-200/80 dark:border-neutral-800" />
+
+                  {/* Allowed Directories */}
+                  <section className="space-y-4">
+                    <div>
+                      <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-50">
+                        Allowed Directories
+                      </h2>
+                      <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                        Additional directories Claude can access beyond the workspace. Default: home
+                        directory (~).
+                      </p>
+                    </div>
+                    {allowedDirectories.length > 0 ?
+                      <div className="space-y-2">
+                        {allowedDirectories.map((dir, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 dark:border-neutral-700 dark:bg-neutral-900"
+                          >
+                            <span className="mr-4 flex-1 truncate font-mono text-sm text-neutral-600 dark:text-neutral-300">
+                              {dir}
+                            </span>
+                            <button
+                              onClick={() => handleRemoveDirectory(dir)}
+                              className="shrink-0 text-sm font-semibold text-red-600 transition-colors hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    : <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 px-4 py-6 text-center dark:border-neutral-700 dark:bg-neutral-900/50">
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                          No directories configured. Add directories to allow Claude access.
+                        </p>
+                      </div>
+                    }
+                    <div className="flex justify-end">
+                      <button
+                        onClick={handleAddDirectory}
+                        disabled={isAddingDirectory}
+                        className="rounded-full bg-neutral-900 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
+                      >
+                        {isAddingDirectory ? 'Selecting...' : 'Add Directory'}
+                      </button>
+                    </div>
                   </section>
 
                   <div className="border-t border-neutral-200/80 dark:border-neutral-800" />

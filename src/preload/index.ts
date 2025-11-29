@@ -133,7 +133,13 @@ contextBridge.exposeInMainWorld('electron', {
     getEnvVars: () => ipcRenderer.invoke('config:get-env-vars'),
     getDiagnosticMetadata: () => ipcRenderer.invoke('config:get-diagnostic-metadata'),
     getApiKeyStatus: () => ipcRenderer.invoke('config:get-api-key-status'),
-    setApiKey: (apiKey?: string | null) => ipcRenderer.invoke('config:set-api-key', apiKey)
+    setApiKey: (apiKey?: string | null) => ipcRenderer.invoke('config:set-api-key', apiKey),
+    getAllowedDirectories: () => ipcRenderer.invoke('config:get-allowed-directories'),
+    setAllowedDirectories: (directories: string[]) =>
+      ipcRenderer.invoke('config:set-allowed-directories', directories),
+    addAllowedDirectoryDialog: () => ipcRenderer.invoke('config:add-allowed-directory-dialog'),
+    removeAllowedDirectory: (directory: string) =>
+      ipcRenderer.invoke('config:remove-allowed-directory', directory)
   },
   shell: {
     openExternal: (url: string) => ipcRenderer.invoke('shell:open-external', url)
