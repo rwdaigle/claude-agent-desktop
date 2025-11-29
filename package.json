@@ -16,8 +16,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --cache --cache-location .eslintcache --max-warnings=0",
     "test": "bun test",
-    "format": "prettier --experimental-cli --write .",
-    "format:check": "prettier --experimental-cli --check --log-level warn .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check --log-level warn .",
     "clean": "rm -rf node_modules out dist .turbo .eslintcache *.tsbuildinfo resources/bun resources/bun.exe resources/uv resources/uv.exe resources/jq.exe resources/git-portable resources/msys2 resources/.bun-version resources/.uv-version resources/.jq-version resources/.git-portable-version resources/.msys2-version"
   },
   "dependencies": {
